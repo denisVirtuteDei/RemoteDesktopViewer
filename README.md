@@ -1,2 +1,3 @@
 # RemoteDesktopViewer
-simple NOTTeamViewer with directX &amp;&amp; RDP
+// Simple NOTTeamViewer with directX &amp;&amp; RDP.
+// But not now!!!
