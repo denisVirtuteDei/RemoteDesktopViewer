@@ -75,8 +75,6 @@ namespace Client
                             }
                         }
                         );
-
-                        bitmap.Dispose();
                     }
 
                     stream.Close();

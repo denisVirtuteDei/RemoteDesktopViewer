@@ -5,10 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:NotTeamViewer"
         mc:Ignorable="d"
-        Title="MainWindow"
+        Title="Not Team Viewer"
+        
+        Background="#FBF7F7"
         ResizeMode="NoResize" 
-        Height="400" Width="460"
-        MaxHeight="400" MaxWidth="460">
+        Height="400" Width="460">
 
 
     <Grid>
@@ -20,17 +21,20 @@
         </Grid.RowDefinitions>
 
         <!--Manage panel-->
-        <ToolBar Grid.Row="0" Background="#EB7070" MinWidth="440">
-            <Button x:Name="viewButton" Height="29">View</Button>
-            <Button x:Name="specialButton" Height="29">Special</Button>
-        </ToolBar>
-
+        <Menu Grid.Row="0" Background="#F9D00F" FontFamily="Arial" >
+            <MenuItem Header="View" Height="30">
+                <MenuItem Header="Change colors" Click="ChangeColor_Click"/>
+            </MenuItem>
+            <MenuItem Header="Special">
+                <MenuItem Header="Exit" Click="ExitItem_Click"/>
+            </MenuItem>
+        </Menu>
 
         <!--Main window-->
-        <TextBlock Margin="48,18,48,250" Grid.Row="1" Text="Allow management"
+        <TextBlock Margin="48,17.6,47.6,246" Grid.Row="1" Text="Allow management"
                    FontFamily="Arial" FontSize="22"/>
 
-        <Polyline Grid.Row="1" Points="50,55 50,90" Stroke="#FEC771"
+        <Polyline Grid.Row="1" Points="50,55 50,90" Stroke="#F0AE2C"
                   StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                   StrokeThickness="3"/>
 
@@ -40,9 +44,9 @@
 
         <TextBox Margin="60,71.6,265,195" Grid.Row="1" Text="222 222 222"
                  FontFamily="Arial" FontSize="20" x:Name="IDBox"
-                 BorderThickness="0"/>
+                 BorderThickness="0" Background="#FBF7F7"/>
 
-        <Polyline Points="50,120 50,155" Grid.Row="1" Stroke="#FEC771" 
+        <Polyline Points="50,120 50,155" Grid.Row="1" Stroke="#F0AE2C" 
                   StrokeThickness="3" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
 
         <Label Margin="60,118,265,155" Grid.Row="1" Content="Password"
@@ -51,16 +55,16 @@
 
         <TextBox Margin="60,136,265,132" Grid.Row="1" Text="184ryt"
                  FontFamily="Arial" FontSize="20" x:Name="PasswordBox"
-                 BorderThickness="0"/>
+                 BorderThickness="0" Background="#FBF7F7"/>
 
         <Separator Margin="48,184.6,48,95" Grid.Row="1"/>
 
-        <TextBlock Margin="48,212.6,47.6,52" Grid.Row="1" Text="Uncontrolled access"
+        <TextBlock Margin="48,212.6,205.6,52" Grid.Row="1" Text="Uncontrolled access"
                    FontFamily="Arial" FontSize="20"/>
 
-        <!--TODO-->
-        <CheckBox Margin="48,251.6,47.6,18" Grid.Row="1" Content="Run NTV when startin Windows"
-                  FontFamily="Arial" FontSize="12" Background="#EB7070"/>
+        <CheckBox Margin="48,251.6,205.6,18" Grid.Row="1" Content="Run NTV when startin Windows"
+                  FontFamily="Arial" FontSize="12" Background="#F9D00F"
+                  Click="CheckBox_Click" x:Name="checkBox"/>
 
     </Grid>
 

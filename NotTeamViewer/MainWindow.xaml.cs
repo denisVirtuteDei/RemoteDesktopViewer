@@ -14,18 +14,17 @@ namespace NotTeamViewer
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly TcpServer tcp;
+        private TcpServer tcp;
 
 
         public MainWindow()
         {
             InitializeComponent();
             tcp = new TcpServer();
-
-            StartServerButton_Click();
+            StartServer();
         }
 
-        private async void StartServerButton_Click()
+        private async void StartServer()
         {
             if (!tcp.GetinProc())
             {
@@ -34,9 +33,19 @@ namespace NotTeamViewer
             }
         }
 
-        private void StopButton_Click(object sender, RoutedEventArgs e)
+        private void ChangeColor_Click(object sender, RoutedEventArgs e)
         {
-            tcp.SetinProc(false);
+
+        }
+
+        private void ExitItem_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void CheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.MessageBox.Show("Value changed");
         }
     }
 }

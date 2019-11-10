@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Windows;
 using SharpDX.Direct3D9;
 
 namespace NotTeamViewer
@@ -19,6 +20,10 @@ namespace NotTeamViewer
         private Direct3D direct3d;
 
 
+        public TcpServer()
+        {
+            AllScreen();
+        }
 
         public bool GetinProc()
         {
@@ -32,35 +37,38 @@ namespace NotTeamViewer
 
         public void Run()
         {
-            DoubleA();
             TcpListener listener = new TcpListener(IPAddress.Any, localPort);
             listener.Start();
 
-            using (TcpClient client = listener.AcceptTcpClient())
+            while(true)
             {
-                try
+                using (TcpClient client = listener.AcceptTcpClient())
                 {
-                    NetworkStream stream = client.GetStream();
-                    Bitmap bitmap;
-                    BinaryFormatter formatter = new BinaryFormatter();
-
-                    while (inProc)
+                    try
                     {
-                        bitmap = Frame();
-                        formatter.Serialize(stream, bitmap);
+                        NetworkStream stream = client.GetStream();
+                        BinaryFormatter formatter = new BinaryFormatter();
+
+                        while (inProc && client.Connected)
+                        {
+                            formatter.Serialize(stream, Frame());
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
                     }
                 }
-                catch (Exception)
-                {
-                    // TODO 
-                    // Dialog box
-                    inProc = false;
-                }
-            }
-
+            }            
         }
 
-        private void DoubleA()
+        private Bitmap Frame()
+        {            
+            device.GetFrontBufferData(0, surface);
+            return new Bitmap(Surface.ToStream(surface, SharpDX.Direct3D9.ImageFileFormat.Bmp));
+        }
+
+        private void AllScreen(IntPtr hWnd = default)
         {
             direct3d = new Direct3D();
             PresentParameters pp = new PresentParameters()
@@ -71,19 +79,14 @@ namespace NotTeamViewer
                 BackBufferWidth = width,
                 BackBufferHeight = height,
                 MultiSampleType = MultisampleType.None,
-                DeviceWindowHandle = default,
+                DeviceWindowHandle = hWnd,
                 PresentationInterval = PresentInterval.Default,
                 FullScreenRefreshRateInHz = 0
             };
 
-            device = new Device(direct3d, 0, DeviceType.Hardware, IntPtr.Zero, CreateFlags.HardwareVertexProcessing, pp);
-            surface = Surface.CreateOffscreenPlain(device, width, height, Format.A8R8G8B8, Pool.Scratch);
+            device = new Device(direct3d, 0, DeviceType.Hardware, pp.DeviceWindowHandle, CreateFlags.SoftwareVertexProcessing, pp);
+            surface = Surface.CreateOffscreenPlain(device, width, height, Format.A8R3G3B2, Pool.Scratch);
         }
 
-        private Bitmap Frame()
-        {
-            device.GetFrontBufferData(0, surface);
-            return new Bitmap(Surface.ToStream(surface, SharpDX.Direct3D9.ImageFileFormat.Bmp));
-        }
     }
 }
