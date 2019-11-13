@@ -1,31 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Windows;
-using System.Windows.Forms;
+﻿using System.Windows;
 using System.Threading.Tasks;
-using System.Net.Sockets;
 
-namespace NotTeamViewer
+namespace NotTeamViewer.Server
 {
     /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
+    /// Логика взаимодействия для server MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        private TcpServer tcp;
-
+        private readonly TcpServer tcp;
 
         public MainWindow()
         {
             InitializeComponent();
-            tcp = new TcpServer();
-            StartServer();
+            tcp = new TcpServer();            
         }
 
         private async void StartServer()
-        {
+        {          
             if (!tcp.GetinProc())
             {
                 tcp.SetinProc(true);
@@ -46,6 +38,21 @@ namespace NotTeamViewer
         private void CheckBox_Click(object sender, RoutedEventArgs e)
         {
             System.Windows.MessageBox.Show("Value changed");
+        }
+
+        private void StartItem_Click(object sender, RoutedEventArgs e)
+        {
+            if(tcp.GetinProc())
+            {
+                tcp.SetinProc(false);
+                
+                StartStopItem.Header = "Start";
+            }
+            else
+            {
+                StartStopItem.Header = "Stop";
+                StartServer();
+            }
         }
     }
 }
