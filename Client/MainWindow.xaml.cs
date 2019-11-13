@@ -1,23 +1,27 @@
 ﻿using System.Windows;
 using System.Threading.Tasks;
 
-namespace Client
+namespace NotTeamViewer.Client
 {
     /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
+    /// Логика взаимодействия для Client MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly TcpClient_t tcp;
+        private readonly TcpClient_d tcp;
 
-
+        /// <summary>
+        /// Constructor client <see cref="MainWindow"/>.
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
-            tcp = new TcpClient_t(this);
+            tcp = new TcpClient_d(this);
         }
-        
 
+        /// <summary>
+        /// Event for start button click.
+        /// </summary>
         private async void TCP_Start(object sender, RoutedEventArgs e)
         {
             if (!tcp.GetinProc())
@@ -27,6 +31,9 @@ namespace Client
             }
         }
 
+        /// <summary>
+        /// Event for stop button click.
+        /// </summary>
         private void Stop_But_Click(object sender, RoutedEventArgs e)
         {
             tcp.SetinProc(false);

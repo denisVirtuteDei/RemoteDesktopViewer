@@ -1,25 +1,39 @@
-﻿<Window x:Class="Client.MainWindow"
+﻿<Window x:Class="NotTeamViewer.Client.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Client"
+        xmlns:local="clr-namespace:NotTeamViewer.Client"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
 
-    <Grid>
+    <Grid Background="#FBF7F7">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="50"/>
+        </Grid.RowDefinitions>
 
-        <Image x:Name="ImagePanel" Margin="0,0,0,47"/>
+        <Image x:Name="ImagePanel" Grid.Row="0" Stretch="Fill"/>
 
-        <Grid Margin="0,380,0,0">
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="320"/>
+            </Grid.ColumnDefinitions>
+
             <Button Content="Start" x:Name="TcpStartButton" Click="TCP_Start"
-                Margin="262,0,413,10"/>
+                    Width="100" Height="30" HorizontalAlignment="Right" FontSize="14" FontFamily="Arial"
+                    Grid.Column="1" Margin="0,10,180,10" Background="#F0AE2C"/>
 
             <Button Content="Stop" x:Name="StopButton" Click="Stop_But_Click"
-                Margin="413,0,262,10"/>
+                    Width="100" Height="30" HorizontalAlignment="Right" FontSize="14" FontFamily="Arial"
+                    Grid.Column="1" Margin="0,10,40,10" Background="#F0AE2C"/>
+
+            <TextBlock Text="Status line:" Grid.Column="0" VerticalAlignment="Stretch"
+                       Margin="10,20,0,10.4" FontSize="15" FontFamily="Arial" x:Name="TextBlock"/>
         </Grid>
 
     </Grid>
 
-        
+
 </Window>
