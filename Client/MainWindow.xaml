@@ -18,19 +18,25 @@
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
-                <ColumnDefinition Width="320"/>
+                <ColumnDefinition Width="450"/>
             </Grid.ColumnDefinitions>
 
+            <TextBox x:Name="ipAddress" Grid.Column="1" Width="150"
+                     Height="30" Margin="10,10,290.6,10.4" />
+
             <Button Content="Start" x:Name="TcpStartButton" Click="TCP_Start"
-                    Width="100" Height="30" HorizontalAlignment="Right" FontSize="14" FontFamily="Arial"
-                    Grid.Column="1" Margin="0,10,180,10" Background="#F0AE2C"/>
+                    Width="100" HorizontalAlignment="Right" FontSize="14" FontFamily="Arial"
+                    Grid.Column="1" Margin="0,10,179.6,10.4" Background="#F0AE2C"/>
 
             <Button Content="Stop" x:Name="StopButton" Click="Stop_But_Click"
-                    Width="100" Height="30" HorizontalAlignment="Right" FontSize="14" FontFamily="Arial"
-                    Grid.Column="1" Margin="0,10,40,10" Background="#F0AE2C"/>
+                    Width="100" HorizontalAlignment="Right" FontSize="14" FontFamily="Arial"
+                    Grid.Column="1" Margin="0,10,39.6,10.4" Background="#F0AE2C"/>
 
-            <TextBlock Text="Status line:" Grid.Column="0" VerticalAlignment="Stretch"
-                       Margin="10,20,0,10.4" FontSize="15" FontFamily="Arial" x:Name="TextBlock"/>
+            <StackPanel>
+                <TextBlock Text="Status line:"  Grid.Column="0" VerticalAlignment="Stretch" TextWrapping="Wrap"
+                           Margin="10,0,10,0.4" FontSize="12" FontFamily="Arial" x:Name="TextBlock" Height="50"/>
+            </StackPanel>
+
         </Grid>
 
     </Grid>

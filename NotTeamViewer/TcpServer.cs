@@ -20,9 +20,14 @@ namespace NotTeamViewer.Server
         private Device device;
         private Surface surface;
         private Rectangle rect = Screen.PrimaryScreen.Bounds;
+        private MainWindow main;
+        public delegate void MouseMoves(string str);
+        public event MouseMoves MouseMoveNotify;
 
-        public TcpServer()
+        public TcpServer(MainWindow _main)
         {
+            main = _main;
+
             AllScreen();
         }
 
@@ -48,11 +53,17 @@ namespace NotTeamViewer.Server
                 try
                 {
                     NetworkStream stream = client.GetStream();
+                    byte[] bytes = new byte[128];
 
                     while (inProc)
                     {
                         first = Frame2();
                         formatter.Serialize(stream, first);
+                        
+
+                        var mas = (byte[][])formatter.Deserialize(stream);
+                        MouseMoveNotify(GetAct(mas));
+                        stream.FlushAsync();
                     }
                 }
                 catch (Exception ex)
@@ -62,9 +73,14 @@ namespace NotTeamViewer.Server
                 finally
                 {
                     inProc = false;
+                    main.Dispatcher.Invoke(() =>
+                    {
+                        main.StartStopItem.Header = "Start";
+                    });
                 }
             }
         }
+
 
 
         private void AllScreen()
@@ -93,10 +109,23 @@ namespace NotTeamViewer.Server
             return bmp.Clone(rect, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
         }
 
-        
-        
-        
-        
+        private string GetAct(byte[][] bytes)
+        {
+            string result = "";
+
+            result += BitConverter.ToDouble(bytes[0], 0).ToString();
+            result += " ";
+            result += BitConverter.ToDouble(bytes[1], 0).ToString();
+            result += " ";
+            result += Convert.ToByte(bytes[2][0]);
+            result += " ";
+            result += Convert.ToByte(bytes[3][0]);
+
+            return result;
+        }
+
+
+
         /// <summary>
         /// Split screenshot up to pictures. And set next divider based on last screen. 
         /// </summary>
@@ -130,7 +159,7 @@ namespace NotTeamViewer.Server
             //SetDivider(count);
             return bytes;
         }
-        
+
         private byte[] ConvertToBytes(Bitmap bmp)
         {
             using (MemoryStream memoryStream = new MemoryStream())
@@ -176,6 +205,7 @@ namespace NotTeamViewer.Server
 
             return pieces;
         }
+
 
     }
 }

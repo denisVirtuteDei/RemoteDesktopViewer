@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.Windows.Media.Imaging;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Collections.Generic;
+using System.Windows.Input;
 
 namespace NotTeamViewer.Client
 {
@@ -17,7 +18,15 @@ namespace NotTeamViewer.Client
         private readonly int localPort = 1488;
         private bool inProc = false;
         private readonly MainWindow main;
-        private Rectangle rect = Screen.PrimaryScreen.Bounds;
+        private Rectangle rect;
+        private string ipAddress = "127.0.0.1";
+        private double mouseX;
+        private double mouseY;
+        private bool mouseLeftDown;
+        private bool mouseRightDown;
+        private Key key; 
+
+
 
         /// <summary>
         /// Constructor <see cref="TcpClient_d"/>.
@@ -25,7 +34,48 @@ namespace NotTeamViewer.Client
         public TcpClient_d(MainWindow main)
         {
             this.main = main;
+            this.main.MouseMoveNotify += Main_MouseMoveNotify;
+            this.main.MouseClickNotify += Main_MouseClickNotify;
+            this.main.KeyClickNotify += Main_KeyClickNotify;
+            main.Dispatcher.Invoke(() =>
+            {
+                rect = new Rectangle(0, 0,
+                       (int)main.ImagePanel.MaxWidth,
+                       (int)main.ImagePanel.MaxHeight);
+                
+            });
         }
+
+        private void Main_KeyClickNotify(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            e.InputSource.Dispatcher.Invoke(() =>
+            {
+                key = e.Key;
+            }
+            );
+        }
+
+        private void Main_MouseClickNotify(object sender, MouseButtonEventArgs e)
+        {
+            e.MouseDevice.Dispatcher.Invoke(() =>
+            {
+                mouseLeftDown = e.LeftButton == MouseButtonState.Pressed;
+                mouseRightDown = e.RightButton == MouseButtonState.Pressed;
+            }
+            );           
+        }
+
+        private void Main_MouseMoveNotify(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            e.MouseDevice.Dispatcher.Invoke(() =>
+            {
+                var loc = e.GetPosition(null);
+                mouseX = loc.X;
+                mouseY = loc.Y;
+            }
+            );            
+        }
+        
 
         /// <inheritdoc/>
         public bool GetinProc()
@@ -39,12 +89,25 @@ namespace NotTeamViewer.Client
             inProc = value;
         }
 
+        public bool SetIP(string ip)
+        {
+            var strIP = ip.Split('.');
+
+            if (strIP.Length != 4)
+            {
+                MessageBox.Show("Uncorrect ip address");
+                return false;
+            }
+            else
+                ipAddress = ip;
+            return true;
+        }
+
         /// <summary>
         /// Function of message exchange with TcpServer.
         /// </summary>
         public void Run()
         {
-            inProc = true;
             var pieces = InitRectangleMas(8);
             BinaryFormatter formatter = new BinaryFormatter();
             Bitmap first;
@@ -53,12 +116,17 @@ namespace NotTeamViewer.Client
             {
                 try
                 {
-                    client.Connect("127.0.0.1", localPort);
+                    client.Connect(ipAddress, localPort);
                     NetworkStream stream = client.GetStream();
+                    inProc = true;
 
                     while (inProc)
                     {
-                        first = (Bitmap)formatter.Deserialize(stream);
+                        first = (Bitmap)formatter.Deserialize(stream); 
+                        
+                        stream.FlushAsync();
+                        formatter.Serialize(stream, GetEvents());
+
                         DrawNudes(first);
                     }
 
@@ -68,7 +136,7 @@ namespace NotTeamViewer.Client
                 {
                     main.TextBlock.Dispatcher.Invoke(() =>
                     {
-                        main.TextBlock.Text = exc.Message;
+                        main.TextBlock.Text = "Status: " + exc.Message;
                     });
                 }
                 finally
@@ -87,6 +155,16 @@ namespace NotTeamViewer.Client
             );
         }
 
+        private byte[][] GetEvents()
+        {
+            List<byte[]> bytes = new List<byte[]>();
+            bytes.Add(BitConverter.GetBytes(mouseX / rect.Width));
+            bytes.Add(BitConverter.GetBytes(mouseY / rect.Height));
+            bytes.Add(BitConverter.GetBytes(mouseLeftDown));
+            bytes.Add(BitConverter.GetBytes(mouseRightDown));
+
+            return bytes.ToArray();
+        }
 
         /// <summary>
         /// Convert bitmap to image source. 
@@ -106,7 +184,7 @@ namespace NotTeamViewer.Client
                 return bitmapImage;
             }
         }
-               
+
         /// <summary>
         /// Create and fill <see cref="Rectangle"/>[] by dividerX * dividerY elements.
         /// </summary>

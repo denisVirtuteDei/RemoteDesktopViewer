@@ -1,5 +1,8 @@
 ﻿using System.Windows;
 using System.Threading.Tasks;
+using System.Windows.Input;
+using System.Runtime.InteropServices;
+using System;
 
 namespace NotTeamViewer.Server
 {
@@ -9,11 +12,25 @@ namespace NotTeamViewer.Server
     public partial class MainWindow : Window
     {
         private readonly TcpServer tcp;
+        private readonly int width = 1920;
+        private readonly int height = 1080;
+
 
         public MainWindow()
         {
             InitializeComponent();
-            tcp = new TcpServer();            
+            tcp = new TcpServer(this);
+            tcp.MouseMoveNotify += Tcp_MouseMoveNotify;
+        }
+
+        private void Tcp_MouseMoveNotify(string str)
+        {
+            var loc = str.Split(' ');
+            int left = loc[2] == "1" ? 1 : 0;
+            double w = Convert.ToDouble(loc[0]) * width;
+            double h = Convert.ToDouble(loc[1]) * height;
+            SetCursorPos((int)w, (int)h);
+            //var ev = new MouseEventArgs(MouseButtons.Left, left, 630, 630, 0);
         }
 
         private async void StartServer()
@@ -54,5 +71,9 @@ namespace NotTeamViewer.Server
                 StartServer();
             }
         }
+
+
+        [DllImport("user32.dll")]
+        public static extern void SetCursorPos(int x, int y);
     }
 }
