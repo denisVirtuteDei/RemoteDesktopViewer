@@ -15,12 +15,14 @@ namespace NotTeamViewer.Client
     {
         private readonly TcpClient_d tcp;
 
-        public delegate void MouseMoves(object sender, MouseEventArgs e);
-        public event MouseMoves MouseMoveNotify;
-        public delegate void MouseClicks(object sender, MouseButtonEventArgs e);
-        public event MouseClicks MouseClickNotify;
-        public delegate void KeyClicks(object sender, KeyEventArgs e);
+        public delegate void KeyClicks(Key key, bool up, bool down);
         public event KeyClicks KeyClickNotify;
+        public delegate void MouseClicks(MouseButtonState l, MouseButtonState r);
+        public event MouseClicks MouseClickNotify;
+        public delegate void MouseMoves(int x, int y);
+        public event MouseMoves MouseMoveNotify;
+        public delegate void MouseWheelMove(int delta);
+        public event MouseWheelMove MouseWheelNotify;
 
         /// <summary>
         /// Constructor client <see cref="MainWindow"/>.
@@ -28,29 +30,34 @@ namespace NotTeamViewer.Client
         public MainWindow()
         {
             InitializeComponent();
-            this.KeyDown += MainWindow_KeyDown;
-            this.MouseMove += MainWindow_MouseMove;
-            this.MouseDown += MainWindow_MouseDown;
-
+            this.KeyDown += MainWindow_KeyClick;
+            this.KeyUp += MainWindow_KeyClick;
+            
             tcp = new TcpClient_d(this);
         }
-        
 
-        private async void MainWindow_MouseMove(object sender, MouseEventArgs e)
+
+        private void Image_MouseMove(object sender, MouseEventArgs e)
         {
-            await Task.Run(() => MouseMoveNotify(sender, e));
+            var loc = e.GetPosition(ImagePanel);
+            MouseMoveNotify((int)loc.X, (int)loc.Y);
         }
 
-        private async void MainWindow_MouseDown(object sender, MouseButtonEventArgs e)
+        private void Image_MouseClick(object sender, MouseButtonEventArgs e)
         {
-            await Task.Run(() => MouseClickNotify(sender, e));
+            MouseClickNotify(e.LeftButton, e.RightButton);
         }
 
-        private async void MainWindow_KeyDown(object sender, KeyEventArgs e)
+        private void MainWindow_KeyClick(object sender, KeyEventArgs e)
         {
-            await Task.Run(() => KeyClickNotify(sender, e));
+            KeyClickNotify(e.Key, e.IsUp, e.IsDown);
         }
-        
+
+        private void Image_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            MouseWheelNotify(e.Delta);
+        }
+
 
         /// <summary>
         /// Start button click event.
@@ -58,7 +65,7 @@ namespace NotTeamViewer.Client
         private async void TCP_Start(object sender, RoutedEventArgs e)
         {
             if (!tcp.GetinProc() && tcp.SetIP(ipAddress.Text))
-            {   
+            {
                 await Task.Run(() => tcp.Run());
             }
         }
@@ -70,7 +77,7 @@ namespace NotTeamViewer.Client
         {
             tcp.SetinProc(false);
         }
- 
+
     }
 
 }

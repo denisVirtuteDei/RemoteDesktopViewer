@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Input;
 using SharpDX.Direct3D9;
 
 namespace NotTeamViewer.Server
@@ -14,19 +17,28 @@ namespace NotTeamViewer.Server
     {
         private readonly int width = 1920;
         private readonly int height = 1080;
-        private int divider = 8;
         private readonly int localPort = 1488;
         private bool inProc = false;
         private Device device;
         private Surface surface;
         private Rectangle rect = Screen.PrimaryScreen.Bounds;
         private MainWindow main;
-        public delegate void MouseMoves(string str);
+        private static Bitmap bmp;
+        private static Size size;
+        private static EncoderParameters myEncoderParameters;
+
+
+        public delegate void MouseMoves(byte[][] str);
         public event MouseMoves MouseMoveNotify;
 
         public TcpServer(MainWindow _main)
         {
             main = _main;
+
+            bmp = new Bitmap(rect.Width, rect.Height);
+            size = new Size(rect.Width, rect.Height);
+            myEncoderParameters = new EncoderParameters(1);
+            myEncoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, 40L);
 
             AllScreen();
         }
@@ -44,7 +56,7 @@ namespace NotTeamViewer.Server
         public void Run()
         {
             BinaryFormatter formatter = new BinaryFormatter();
-            Bitmap first;
+            NetworkStream stream = default;
             TcpListener listener = new TcpListener(IPAddress.Any, localPort);
             listener.Start();
 
@@ -52,27 +64,28 @@ namespace NotTeamViewer.Server
             {
                 try
                 {
-                    NetworkStream stream = client.GetStream();
-                    byte[] bytes = new byte[128];
+                    stream = client.GetStream();
 
                     while (inProc)
                     {
-                        first = Frame2();
-                        formatter.Serialize(stream, first);
-                        
+                        formatter.Serialize(stream, Frame());
 
-                        var mas = (byte[][])formatter.Deserialize(stream);
-                        MouseMoveNotify(GetAct(mas));
-                        stream.FlushAsync();
+                        var commands = (byte[][])formatter.Deserialize(stream);
+                        MouseMoveNotify(commands);
+
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Windows.MessageBox.Show(ex.Message);
+                    System.Windows.MessageBox.Show(ex.Source);
+                    System.Windows.MessageBox.Show(ex.StackTrace);
                 }
                 finally
                 {
                     inProc = false;
+                    stream.Close();
+                    listener.Stop();
                     main.Dispatcher.Invoke(() =>
                     {
                         main.StartStopItem.Header = "Start";
@@ -80,7 +93,6 @@ namespace NotTeamViewer.Server
                 }
             }
         }
-
 
 
         private void AllScreen()
@@ -102,110 +114,39 @@ namespace NotTeamViewer.Server
             surface = Surface.CreateOffscreenPlain(device, width, height, format, Pool.Scratch);
         }
 
-        private Bitmap Frame2()
-        {
-            device.GetFrontBufferData(0, surface);
-            var bmp = (Bitmap)Image.FromStream(Surface.ToStream(surface, ImageFileFormat.Bmp));
-            return bmp.Clone(rect, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
-        }
-
-        private string GetAct(byte[][] bytes)
-        {
-            string result = "";
-
-            result += BitConverter.ToDouble(bytes[0], 0).ToString();
-            result += " ";
-            result += BitConverter.ToDouble(bytes[1], 0).ToString();
-            result += " ";
-            result += Convert.ToByte(bytes[2][0]);
-            result += " ";
-            result += Convert.ToByte(bytes[3][0]);
-
-            return result;
-        }
-
-
-
-        /// <summary>
-        /// Split screenshot up to pictures. And set next divider based on last screen. 
-        /// </summary>
-        /// <param name="pieces">
-        /// List of <see cref="Rectangle"/> which should be initialized before.
-        /// </param>
-        private List<byte[]> SplitIntoParts(List<Rectangle> pieces)
-        {
-            List<byte[]> bytes = new List<byte[]>();
-            var pixelFormat = System.Drawing.Imaging.PixelFormat.Format16bppRgb565;
-
-            Bitmap bitmap;
-            Bitmap backGround = new Bitmap(width, height);
-            Graphics g = Graphics.FromImage(backGround);
-
-            // Don't know, why i added this properties. Maybe help, Amen!
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighSpeed;
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
-            g.CopyFromScreen(0, 0, 0, 0, new System.Drawing.Size(width, height));
-
-            //int count = 0;
-            foreach (var elem in pieces)
+        private byte[] Frame()
+        {            
+            using (Graphics g = Graphics.FromImage(bmp))
             {
-                bitmap = backGround.Clone(elem, pixelFormat);
-                //var piece = ConvertToBytes(bitmap);
-                bytes.Add(ConvertToBytes(bitmap));
-                //count += piece.Length;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighSpeed;
+                g.CopyFromScreen(0, 0, 0, 0, size);
             }
 
-            //SetDivider(count);
-            return bytes;
+            ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Png);
+
+            MemoryStream memoryStream = new MemoryStream();
+
+            var bitmap = bmp.Clone(rect, PixelFormat.Format16bppRgb555);
+
+            bitmap.Save(memoryStream, jpgEncoder, myEncoderParameters);
+
+
+            return memoryStream.ToArray();
+            //return (Bitmap)Image.FromStream(memoryStream);
         }
 
-        private byte[] ConvertToBytes(Bitmap bmp)
+        private ImageCodecInfo GetEncoder(ImageFormat format)
         {
-            using (MemoryStream memoryStream = new MemoryStream())
+            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
+
+            foreach (ImageCodecInfo codec in codecs)
             {
-                bmp.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
-                return memoryStream.ToArray();
-            }
-        }
-
-        /// <summary>
-        /// Create and fill <see cref="Rectangle"/>[] by dividerX * dividerY elements.
-        /// </summary>
-        private List<Rectangle> InitRectangleList()
-        {
-            List<Rectangle> pieces = new List<Rectangle>();
-
-            int dividerX = 4;
-            int dividerY = divider / 4;
-            int localX = width / dividerX;
-            int localY = height / dividerY;
-
-            for (int j = 0; j < dividerY; j++)
-            {
-                for (int i = 0; i < dividerX; i++)
+                if (codec.FormatID == format.Guid)
                 {
-                    Rectangle piece = new Rectangle()
-                    {
-                        X = i * localX,
-                        Y = j * localY,
-                        Width = localX,
-                        Height = localY
-                    };
-
-                    // Will work, if window width does not wholly divided by 5.
-                    if (i == dividerX - 1)
-                    {
-                        piece.Width = width - (i * localX);
-                    }
-
-                    pieces.Add(piece);
+                    return codec;
                 }
             }
-
-            return pieces;
+            return null;
         }
-
-
     }
 }

@@ -1,12 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Net.Sockets;
-using System.Windows.Forms;
-using System.Windows.Media.Imaging;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Collections.Generic;
+using System.Windows.Forms;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace NotTeamViewer.Client
 {
@@ -18,15 +18,17 @@ namespace NotTeamViewer.Client
         private readonly int localPort = 1488;
         private bool inProc = false;
         private readonly MainWindow main;
-        private Rectangle rect;
-        private string ipAddress = "127.0.0.1";
-        private double mouseX;
-        private double mouseY;
-        private bool mouseLeftDown;
-        private bool mouseRightDown;
-        private Key key; 
+        Rectangle rect = Screen.PrimaryScreen.Bounds;
+        private string ipAddress = "";
 
-
+        private int delta = 0;
+        private double mouseX = 0;
+        private double mouseY = 0;
+        private bool keyDown = false;
+        private bool keyUp = false;
+        private Key key = default;
+        private MouseButtonState lState, rState;
+        
 
         /// <summary>
         /// Constructor <see cref="TcpClient_d"/>.
@@ -37,45 +39,48 @@ namespace NotTeamViewer.Client
             this.main.MouseMoveNotify += Main_MouseMoveNotify;
             this.main.MouseClickNotify += Main_MouseClickNotify;
             this.main.KeyClickNotify += Main_KeyClickNotify;
-            main.Dispatcher.Invoke(() =>
-            {
-                rect = new Rectangle(0, 0,
-                       (int)main.ImagePanel.MaxWidth,
-                       (int)main.ImagePanel.MaxHeight);
-                
-            });
+            this.main.MouseWheelNotify += Main_MouseWheelNotify;
         }
 
-        private void Main_KeyClickNotify(object sender, System.Windows.Input.KeyEventArgs e)
+       
+
+        private void Main_KeyClickNotify(Key key, bool up, bool down)
         {
-            e.InputSource.Dispatcher.Invoke(() =>
+            if (inProc)
             {
-                key = e.Key;
+                this.key = key;
+                keyUp = up;
+                keyDown = down;
             }
-            );
+
         }
 
-        private void Main_MouseClickNotify(object sender, MouseButtonEventArgs e)
+        private void Main_MouseClickNotify(MouseButtonState l, MouseButtonState r)
         {
-            e.MouseDevice.Dispatcher.Invoke(() =>
+            if (inProc)
             {
-                mouseLeftDown = e.LeftButton == MouseButtonState.Pressed;
-                mouseRightDown = e.RightButton == MouseButtonState.Pressed;
+                lState = l;
+                rState = r;
             }
-            );           
         }
 
-        private void Main_MouseMoveNotify(object sender, System.Windows.Input.MouseEventArgs e)
+        private void Main_MouseMoveNotify(int x, int y)
         {
-            e.MouseDevice.Dispatcher.Invoke(() =>
+            if (inProc)
             {
-                var loc = e.GetPosition(null);
-                mouseX = loc.X;
-                mouseY = loc.Y;
+                mouseX = x;
+                mouseY = y;
             }
-            );            
         }
-        
+
+        private void Main_MouseWheelNotify(int delta)
+        {
+            if (inProc)
+            {
+                this.delta = delta;
+            }
+        }
+
 
         /// <inheritdoc/>
         public bool GetinProc()
@@ -89,6 +94,7 @@ namespace NotTeamViewer.Client
             inProc = value;
         }
 
+        /// <inheritdoc/>
         public bool SetIP(string ip)
         {
             var strIP = ip.Split('.');
@@ -108,29 +114,31 @@ namespace NotTeamViewer.Client
         /// </summary>
         public void Run()
         {
-            var pieces = InitRectangleMas(8);
             BinaryFormatter formatter = new BinaryFormatter();
-            Bitmap first;
+            NetworkStream stream = default;
 
             using (TcpClient client = new TcpClient())
             {
                 try
                 {
                     client.Connect(ipAddress, localPort);
-                    NetworkStream stream = client.GetStream();
+                    stream = client.GetStream();
                     inProc = true;
 
                     while (inProc)
                     {
-                        first = (Bitmap)formatter.Deserialize(stream); 
-                        
-                        stream.FlushAsync();
-                        formatter.Serialize(stream, GetEvents());
+                        var second = (byte[])formatter.Deserialize(stream);
 
-                        DrawNudes(first);
+                        DrawNudes(second);
+
+                        main.TextBlock.Dispatcher.Invoke(() =>
+                        {
+                            main.TextBlock.Text = key.ToString();
+                        });
+
+                        formatter.Serialize(stream, GetEvents());
                     }
 
-                    stream.Close();
                 }
                 catch (Exception exc)
                 {
@@ -141,11 +149,17 @@ namespace NotTeamViewer.Client
                 }
                 finally
                 {
+                    if(stream.DataAvailable)
+                        stream.Close();
+                    
                     inProc = false;
+                    ipAddress = "";
+                    ResetVal();
                 }
             }
         }
 
+        /// <inheritdoc/>
         private void DrawNudes(Bitmap source)
         {
             main.ImagePanel.Dispatcher.Invoke(() =>
@@ -155,25 +169,91 @@ namespace NotTeamViewer.Client
             );
         }
 
+        private void DrawNudes(byte[] source)
+        {
+            main.ImagePanel.Dispatcher.Invoke(() =>
+            {
+                main.ImagePanel.Source = BitmapToImageSource(source);
+            }
+            );
+        }
+
+
+
+        /// <inheritdoc/>
         private byte[][] GetEvents()
         {
-            List<byte[]> bytes = new List<byte[]>();
-            bytes.Add(BitConverter.GetBytes(mouseX / rect.Width));
-            bytes.Add(BitConverter.GetBytes(mouseY / rect.Height));
-            bytes.Add(BitConverter.GetBytes(mouseLeftDown));
-            bytes.Add(BitConverter.GetBytes(mouseRightDown));
+            char mouseLStatus,
+                 mouseRStatus,
+                 keyStatus;
+
+            double rectW = 1, rectH = 1;
+            main.ImagePanel.Dispatcher.Invoke(() =>
+            {
+                rectW = main.ImagePanel.ActualWidth;
+                rectH = main.ImagePanel.ActualHeight;
+            }
+            );
+
+            if (lState == MouseButtonState.Pressed)
+                mouseLStatus = 'd';
+            else if (lState == MouseButtonState.Released)
+                mouseLStatus = 'u';
+            else
+                mouseLStatus = 'f';
+
+
+            if (rState == MouseButtonState.Pressed)
+                mouseRStatus = 'd';
+            else if (rState == MouseButtonState.Released)
+                mouseRStatus = 'u';
+            else
+                mouseRStatus = 'f';
+
+
+            if (keyDown)
+                keyStatus = 'd';
+            else if (keyUp)
+                keyStatus = 'u';
+            else
+                keyStatus = 'f';
+
+
+            List<byte[]> bytes = new List<byte[]>
+            {
+                BitConverter.GetBytes(
+                    (mouseX<0?0:mouseX) / rectW),
+                BitConverter.GetBytes(
+                    (mouseY<0?0:mouseY) / rectH),
+                BitConverter.GetBytes(mouseLStatus),
+                BitConverter.GetBytes(mouseRStatus),
+                BitConverter.GetBytes(keyStatus),
+                BitConverter.GetBytes((int)key),
+                BitConverter.GetBytes(delta)
+            };
+
+            delta = 0;
 
             return bytes.ToArray();
         }
+        
+        private void ResetVal()
+        {
+            //mouseLeftDown = false;
+            //mouseLeftUp = false;
+            //mouseRightDown = false;
+            //mouseRightUp = false;
+            keyDown = false;
+            keyUp = false;
+            key = default;
+        }
 
-        /// <summary>
-        /// Convert bitmap to image source. 
-        /// </summary>
+        /// <inheritdoc/>
         private BitmapImage BitmapToImageSource(Bitmap bmp)
         {
             using (MemoryStream stream = new MemoryStream())
             {
-                bmp.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                bmp.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp);
                 stream.Position = 0;
                 BitmapImage bitmapImage = new BitmapImage();
                 bitmapImage.BeginInit();
@@ -185,42 +265,19 @@ namespace NotTeamViewer.Client
             }
         }
 
-        /// <summary>
-        /// Create and fill <see cref="Rectangle"/>[] by dividerX * dividerY elements.
-        /// </summary>
-        private Rectangle[] InitRectangleMas(int divider)
+        private BitmapImage BitmapToImageSource(byte[] bmp)
         {
-            List<Rectangle> pieces = new List<Rectangle>();
-
-            int dividerX = 4;
-            int dividerY = divider / 4;
-            int localX = rect.Width / dividerX;
-            int localY = rect.Height / dividerY;
-
-
-            for (int j = 0; j < dividerY; j++)
+            using (MemoryStream stream = new MemoryStream(bmp))
             {
-                for (int i = 0; i < dividerX; i++)
-                {
-                    Rectangle piece = new Rectangle()
-                    {
-                        X = i * localX,
-                        Y = j * localY,
-                        Width = localX,
-                        Height = localY
-                    };
+                BitmapImage bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.StreamSource = stream;
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.EndInit();
 
-                    // Will work, if window width does not wholly divided by 5.
-                    if (i == dividerX - 1)
-                    {
-                        piece.Width = rect.Width - (i * localX);
-                    }
-
-                    pieces.Add(piece);
-                }
+                return bitmapImage;
             }
-
-            return pieces.ToArray();
         }
+
     }
 }
