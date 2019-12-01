@@ -13,7 +13,9 @@
             <RowDefinition Height="50"/>
         </Grid.RowDefinitions>
 
-        <Image x:Name="ImagePanel" Grid.Row="0" Stretch="Fill"/>
+        <Image x:Name="ImagePanel" Stretch="Fill"
+               MouseMove="Image_MouseMove" MouseDown="Image_MouseClick"
+               MouseUp="Image_MouseClick" MouseWheel="Image_MouseWheel"/>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
