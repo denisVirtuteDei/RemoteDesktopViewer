@@ -7,8 +7,10 @@
         mc:Ignorable="d"
         Title="NotTeamViewer"
         Background="#FBF7F7"
-        ResizeMode="NoResize" 
-        Height="400" Width="460">
+        ResizeMode="CanResizeWithGrip" 
+        MinHeight="400" MinWidth="460"
+        Height="400" Width="460"
+        x:Name="background" >
 
 
     <Grid>
@@ -20,7 +22,7 @@
         </Grid.RowDefinitions>
 
         <!--Manage panel-->
-        <Menu Grid.Row="0" Background="#F9D00F" FontFamily="Arial" >
+        <Menu x:Name="Menu" Grid.Row="0" Background="#F9D00F" FontFamily="Arial">
             <MenuItem Header="View" Height="30">
                 <MenuItem Header="Change colors" Click="ChangeColor_Click"/>
             </MenuItem>
@@ -34,7 +36,7 @@
         <TextBlock Margin="48,17.6,47.6,246" Grid.Row="1" Text="Allow management"
                    FontFamily="Arial" FontSize="22"/>
 
-        <Polyline Grid.Row="1" Points="50,55 50,90" Stroke="#F0AE2C"
+        <Polyline x:Name="P1" Grid.Row="1" Points="50,55 50,90" Stroke="#F92727"
                   StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                   StrokeThickness="3"/>
 
@@ -42,18 +44,18 @@
                FontFamily="Arial" FontSize="12"
                Padding="0"/>
 
-        <TextBox Margin="60,71.6,265,195" Grid.Row="1" Text="222 222 222"
+        <TextBox Margin="60,71.6,252.6,195" Grid.Row="1" Text="222 222 222"
                  FontFamily="Arial" FontSize="20" x:Name="IDBox"
                  BorderThickness="0" Background="#FBF7F7"/>
 
-        <Polyline Points="50,120 50,155" Grid.Row="1" Stroke="#F0AE2C" 
+        <Polyline x:Name="P2" Points="50,120 50,155" Grid.Row="1" Stroke="#F92727" 
                   StrokeThickness="3" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
 
         <Label Margin="60,118,265,155" Grid.Row="1" Content="Password"
                FontFamily="Arial" FontSize="12"
                Padding="0"/>
 
-        <TextBox Margin="60,136,265,132" Grid.Row="1" Text="184ryt"
+        <TextBox Margin="60,135.6,252.6,132" Grid.Row="1" Text="184ryt"
                  FontFamily="Arial" FontSize="20" x:Name="PasswordBox"
                  BorderThickness="0" Background="#FBF7F7"/>
 
