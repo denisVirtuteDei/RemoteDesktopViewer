@@ -6,17 +6,30 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
+<<<<<<< HEAD
 using System.Threading;
 using System.Windows.Forms;
 using System.Windows.Input;
 using WindowsInput;
 using WindowsInput.Native;
+=======
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Windows.Input;
+using SharpDX.Direct3D9;
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
 
 namespace NotTeamViewer.Server
 {
     class TcpServer
     {
+<<<<<<< HEAD
         private readonly int localPort = 5001;
+=======
+        private readonly int width = 1920;
+        private readonly int height = 1080;
+        private readonly int localPort = 1488;
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
         private bool inProc = false;
         private bool end = true;
         private Rectangle rect = Screen.PrimaryScreen.Bounds;
@@ -24,6 +37,7 @@ namespace NotTeamViewer.Server
         private static Bitmap bmp;
         private static Size size;
         private static EncoderParameters myEncoderParameters;
+<<<<<<< HEAD
         private string _password = "";
         private MouseFlags prevL = MouseFlags.Absolute,
                            prevR = MouseFlags.Absolute;
@@ -52,15 +66,31 @@ namespace NotTeamViewer.Server
 
 
 
+=======
+
+
+        public delegate void MouseMoves(byte[][] str);
+        public event MouseMoves MouseMoveNotify;
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
 
         public TcpServer(MainWindow _main)
         {
             main = _main;
+<<<<<<< HEAD
             main.PasswordBox.Dispatcher.Invoke(() =>
             {
                 _password = main.PasswordBox.Text;
             });
             Init();
+=======
+
+            bmp = new Bitmap(rect.Width, rect.Height);
+            size = new Size(rect.Width, rect.Height);
+            myEncoderParameters = new EncoderParameters(1);
+            myEncoderParameters.Param[0] = new EncoderParameter(Encoder.Quality, 40L);
+
+            AllScreen();
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
         }
 
         public bool GetinProc()
@@ -98,6 +128,7 @@ namespace NotTeamViewer.Server
                         formatter.Serialize(stream, 1);
                     else
                     {
+<<<<<<< HEAD
                         inProc = false;
                         formatter.Serialize(stream, 0);
                     }
@@ -107,12 +138,25 @@ namespace NotTeamViewer.Server
                         formatter.Serialize(stream, Frame());
                         var str = (byte[][])formatter.Deserialize(stream);
                         SetComm(str);
+=======
+                        formatter.Serialize(stream, Frame());
+
+                        var commands = (byte[][])formatter.Deserialize(stream);
+                        MouseMoveNotify(commands);
+
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
                     }
 
                 }
                 catch (Exception)
                 {
+<<<<<<< HEAD
                     
+=======
+                    System.Windows.MessageBox.Show(ex.Message);
+                    System.Windows.MessageBox.Show(ex.Source);
+                    System.Windows.MessageBox.Show(ex.StackTrace);
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
                 }
                 finally
                 {
@@ -122,13 +166,26 @@ namespace NotTeamViewer.Server
                     end = true;
                     commands = null;
                     inProc = false;
+<<<<<<< HEAD
                     listener.Stop();
+=======
+                    stream.Close();
+                    listener.Stop();
+                    main.Dispatcher.Invoke(() =>
+                    {
+                        main.StartStopItem.Header = "Start";
+                    });
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
                 }
             }
         }
 
 
+<<<<<<< HEAD
         private void Do()
+=======
+        private void AllScreen()
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
         {
             while (true)
             {
@@ -138,6 +195,7 @@ namespace NotTeamViewer.Server
             }
         }
 
+<<<<<<< HEAD
         private void SetComm(byte[][] vs)
         {
             commands = vs;
@@ -235,6 +293,27 @@ namespace NotTeamViewer.Server
 
 
             return memoryStream.ToArray();
+=======
+        private byte[] Frame()
+        {            
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighSpeed;
+                g.CopyFromScreen(0, 0, 0, 0, size);
+            }
+
+            ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Png);
+
+            MemoryStream memoryStream = new MemoryStream();
+
+            var bitmap = bmp.Clone(rect, PixelFormat.Format16bppRgb555);
+
+            bitmap.Save(memoryStream, jpgEncoder, myEncoderParameters);
+
+
+            return memoryStream.ToArray();
+            //return (Bitmap)Image.FromStream(memoryStream);
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
         }
 
         private ImageCodecInfo GetEncoder(ImageFormat format)
@@ -250,6 +329,7 @@ namespace NotTeamViewer.Server
             }
             return null;
         }
+<<<<<<< HEAD
 
         private void Init()
         {
@@ -267,5 +347,7 @@ namespace NotTeamViewer.Server
             };
             _listener.Start();
         }
+=======
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
     }
 }

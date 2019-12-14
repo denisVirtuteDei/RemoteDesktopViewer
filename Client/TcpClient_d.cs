@@ -1,9 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+<<<<<<< HEAD
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
+=======
+using System.Drawing;
+using System.IO;
+using System.Net.Sockets;
+using System.Runtime.Serialization.Formatters.Binary;
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -18,6 +25,7 @@ namespace NotTeamViewer.Client
         private readonly int localPort = 5001;
         private bool inProc = false;
         private readonly MainWindow main;
+<<<<<<< HEAD
         //Rectangle rect = Screen.PrimaryScreen.Bounds;
         private string ipAddress = "";
 
@@ -36,6 +44,19 @@ namespace NotTeamViewer.Client
         private Thread listener;
         private byte[] bmp;
         //private Stack<Key> keys;
+=======
+        Rectangle rect = Screen.PrimaryScreen.Bounds;
+        private string ipAddress = "";
+
+        private int delta = 0;
+        private double mouseX = 0;
+        private double mouseY = 0;
+        private bool keyDown = false;
+        private bool keyUp = false;
+        private Key key = default;
+        private MouseButtonState lState, rState;
+        
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
 
         /// <summary>
         /// Constructor <see cref="TcpClient_d"/>.
@@ -52,6 +73,7 @@ namespace NotTeamViewer.Client
             this.main.MouseClickNotify += Main_MouseClickNotify;
             this.main.KeyClickNotify += Main_KeyClickNotify;
             this.main.MouseWheelNotify += Main_MouseWheelNotify;
+<<<<<<< HEAD
             this.main.ResizeImagePanelNotify += Main_ResizeImagePanelNotify;
             this.main.MouseDblNotify += Main_MouseDblNotify;
 
@@ -122,6 +144,49 @@ namespace NotTeamViewer.Client
                 click = true;
             }
         }
+=======
+        }
+
+       
+
+        private void Main_KeyClickNotify(Key key, bool up, bool down)
+        {
+            if (inProc)
+            {
+                this.key = key;
+                keyUp = up;
+                keyDown = down;
+            }
+
+        }
+
+        private void Main_MouseClickNotify(MouseButtonState l, MouseButtonState r)
+        {
+            if (inProc)
+            {
+                lState = l;
+                rState = r;
+            }
+        }
+
+        private void Main_MouseMoveNotify(int x, int y)
+        {
+            if (inProc)
+            {
+                mouseX = x;
+                mouseY = y;
+            }
+        }
+
+        private void Main_MouseWheelNotify(int delta)
+        {
+            if (inProc)
+            {
+                this.delta = delta;
+            }
+        }
+
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
 
         /// <inheritdoc/>
         public bool GetinProc()
@@ -157,7 +222,10 @@ namespace NotTeamViewer.Client
         {
             BinaryFormatter formatter = new BinaryFormatter();
             NetworkStream stream = default;
+<<<<<<< HEAD
             inProc = true;
+=======
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
 
             using (TcpClient client = new TcpClient())
             {
@@ -165,6 +233,7 @@ namespace NotTeamViewer.Client
                 {
                     client.Connect(ipAddress, localPort);
                     stream = client.GetStream();
+<<<<<<< HEAD
                     string password = "";
 
                     main.Password.Dispatcher.Invoke(() =>
@@ -185,6 +254,21 @@ namespace NotTeamViewer.Client
                     {
                         var str = (byte[])formatter.Deserialize(stream);
                         SetBMP(str);
+=======
+                    inProc = true;
+
+                    while (inProc)
+                    {
+                        var second = (byte[])formatter.Deserialize(stream);
+
+                        DrawNudes(second);
+
+                        main.TextBlock.Dispatcher.Invoke(() =>
+                        {
+                            main.TextBlock.Text = key.ToString();
+                        });
+
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
                         formatter.Serialize(stream, GetEvents());
                     }
 
@@ -198,10 +282,16 @@ namespace NotTeamViewer.Client
                 }
                 finally
                 {
+<<<<<<< HEAD
                     if(stream != null)
                         stream.Close();
 
                     bmp = null;
+=======
+                    if(stream.DataAvailable)
+                        stream.Close();
+                    
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
                     inProc = false;
                     ipAddress = "";
                     ResetVal();
@@ -209,6 +299,7 @@ namespace NotTeamViewer.Client
             }
         }
 
+<<<<<<< HEAD
 
         private void DrawNudes()
         {
@@ -216,12 +307,111 @@ namespace NotTeamViewer.Client
             {
                 main.ImagePanel.Source = BitmapToImageSource();
             });
+=======
+        /// <inheritdoc/>
+        private void DrawNudes(Bitmap source)
+        {
+            main.ImagePanel.Dispatcher.Invoke(() =>
+            {
+                main.ImagePanel.Source = BitmapToImageSource(source);
+            }
+            );
         }
 
+        private void DrawNudes(byte[] source)
+        {
+            main.ImagePanel.Dispatcher.Invoke(() =>
+            {
+                main.ImagePanel.Source = BitmapToImageSource(source);
+            }
+            );
+        }
+
+
+
+        /// <inheritdoc/>
+        private byte[][] GetEvents()
+        {
+            char mouseLStatus,
+                 mouseRStatus,
+                 keyStatus;
+
+            double rectW = 1, rectH = 1;
+            main.ImagePanel.Dispatcher.Invoke(() =>
+            {
+                rectW = main.ImagePanel.ActualWidth;
+                rectH = main.ImagePanel.ActualHeight;
+            }
+            );
+
+            if (lState == MouseButtonState.Pressed)
+                mouseLStatus = 'd';
+            else if (lState == MouseButtonState.Released)
+                mouseLStatus = 'u';
+            else
+                mouseLStatus = 'f';
+
+
+            if (rState == MouseButtonState.Pressed)
+                mouseRStatus = 'd';
+            else if (rState == MouseButtonState.Released)
+                mouseRStatus = 'u';
+            else
+                mouseRStatus = 'f';
+
+
+            if (keyDown)
+                keyStatus = 'd';
+            else if (keyUp)
+                keyStatus = 'u';
+            else
+                keyStatus = 'f';
+
+
+            List<byte[]> bytes = new List<byte[]>
+            {
+                BitConverter.GetBytes(
+                    (mouseX<0?0:mouseX) / rectW),
+                BitConverter.GetBytes(
+                    (mouseY<0?0:mouseY) / rectH),
+                BitConverter.GetBytes(mouseLStatus),
+                BitConverter.GetBytes(mouseRStatus),
+                BitConverter.GetBytes(keyStatus),
+                BitConverter.GetBytes((int)key),
+                BitConverter.GetBytes(delta)
+            };
+
+            delta = 0;
+
+            return bytes.ToArray();
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
+        }
+        
+        private void ResetVal()
+        {
+            //mouseLeftDown = false;
+            //mouseLeftUp = false;
+            //mouseRightDown = false;
+            //mouseRightUp = false;
+            keyDown = false;
+            keyUp = false;
+            key = default;
+        }
+
+<<<<<<< HEAD
         private BitmapImage BitmapToImageSource()
+=======
+        /// <inheritdoc/>
+        private BitmapImage BitmapToImageSource(Bitmap bmp)
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
         {
             using (MemoryStream stream = new MemoryStream(bmp))
             {
+<<<<<<< HEAD
+=======
+                bmp.Save(stream, System.Drawing.Imaging.ImageFormat.Bmp);
+                stream.Position = 0;
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
                 BitmapImage bitmapImage = new BitmapImage();
                 bitmapImage.BeginInit();
                 bitmapImage.StreamSource = stream;
@@ -232,6 +422,7 @@ namespace NotTeamViewer.Client
             }
         }
 
+<<<<<<< HEAD
 
         private void Do()
         {
@@ -303,6 +494,21 @@ namespace NotTeamViewer.Client
             keyUp = false;
             key = default;
             sysKey = default;
+=======
+        private BitmapImage BitmapToImageSource(byte[] bmp)
+        {
+            using (MemoryStream stream = new MemoryStream(bmp))
+            {
+                BitmapImage bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.StreamSource = stream;
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.EndInit();
+
+                return bitmapImage;
+            }
+>>>>>>> 33b82a59a32b81d3973c69d1054ce6c2b4de9f4e
         }
+
     }
 }
